@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "56418556348",
+    "project_id": "botmd-c98a7",
+    "storage_bucket": "botmd-c98a7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:56418556348:android:f3feab9580c2b4458df3b9",
+        "android_client_info": {
+          "package_name": "com.karwaan.bot_md"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "56418556348-frjt3hvpostvnjds0q8o2r5cn97bbscu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.karwaan.bot_md",
+            "certificate_hash": "acbcb4507984164e6f9bf9f596ec4a03c798810e"
+          }
+        },
+        {
+          "client_id": "56418556348-6bsoopajaoglcanl1ff5lt9j52p1e30t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAn_v8Wyo8W8ue3-yHLoNebODfhlWuBFKM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "56418556348-6bsoopajaoglcanl1ff5lt9j52p1e30t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
