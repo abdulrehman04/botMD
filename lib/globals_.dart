@@ -10,6 +10,8 @@ import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:get/state_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'Dashboard/main_nav.dart';
+
 RxMap currentUserData = RxMap({});
 late DocumentSnapshot currentUser;
 FirebaseAuth auth = FirebaseAuth.instance;
@@ -456,6 +458,29 @@ List worldCountries = [
   {"Country": "Zambia", "ThreeLetterSymbol": "zmb"},
   {"Country": "Zimbabwe", "ThreeLetterSymbol": "zwe"}
 ];
+
+void getandUpdateUsersData() {
+  // messaging.getToken().then((token) {
+  //   print(token);
+  //   FirebaseFirestore.instance
+  //       .collection('Users')
+  //       .doc(FirebaseAuth.instance.currentUser!.uid)
+  //       .update({
+  //     'token': token,
+  //   }).then((value) {
+  FirebaseFirestore.instance
+      .collection('Users')
+      .doc(FirebaseAuth.instance.currentUser!.uid)
+      .snapshots()
+      .listen((value) {
+    currentUser = value;
+    currentUserData.value = Map.from(value.data()!);
+    if (firstOpen == false) {
+      firstOpen = true;
+      Get.off(() => MainNav());
+    }
+  });
+}
 
 boxShad(double x, double y, double b, {opacity = 0.4}) {
   return BoxShadow(

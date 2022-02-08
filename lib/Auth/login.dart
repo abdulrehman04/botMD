@@ -1,5 +1,4 @@
 import 'package:bot_md/Dashboard/main_nav.dart';
-import 'package:bot_md/globals_.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../constants.dart';
+import '../globals_.dart';
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -154,16 +154,14 @@ class _LoginState extends State<Login> {
     FirebaseFirestore.instance
         .collection('Users')
         .doc(FirebaseAuth.instance.currentUser!.uid)
-        .snapshots()
-        .listen((value) {
+        .get()
+        .then((value) {
       currentUser = value;
       currentUserData.value = Map.from(value.data()!);
       if (firstOpen == false) {
         firstOpen = true;
-        Get.off(MainNav());
+        Get.off(() => MainNav());
       }
     });
-    //   });
-    // });
   }
 }

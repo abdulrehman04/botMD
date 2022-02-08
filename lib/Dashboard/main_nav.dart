@@ -1,12 +1,9 @@
 import 'dart:convert';
 
 import 'package:bot_md/Dashboard/home_.dart';
+import 'package:bot_md/Dashboard/library.dart';
 import 'package:bot_md/Dashboard/profile.dart';
 import 'package:bot_md/Navigation/laboratories.dart';
-import 'package:bot_md/globals_.dart';
-import 'package:curved_nav_bar/curved_bar/curved_action_bar.dart';
-import 'package:curved_nav_bar/fab_bar/fab_bottom_app_bar_item.dart';
-import 'package:curved_nav_bar/flutter_curved_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:http/http.dart' as http;
@@ -35,7 +32,7 @@ class _MainNavState extends State<MainNav> {
 
   List pages = [
     const Home(),
-    const Laboratories(),
+    Library(),
     Profile(),
   ];
 

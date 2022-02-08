@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:bot_md/Profile/edit_profile.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:bot_md/Auth/login.dart';
 import 'package:bot_md/globals_.dart';
@@ -193,7 +195,9 @@ class Profile extends StatelessWidget {
                     ),
                     child: ListTile(
                       onTap: () {
-                        Get.offAll(() => Login());
+                        FirebaseAuth.instance.signOut().then((value) {
+                          Get.offAll(() => Login());
+                        });
                       },
                       title: montserratText(
                         text: 'Logout',
