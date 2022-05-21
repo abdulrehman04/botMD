@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'package:bot_md/Isolation/isolation_settings.dart';
+import 'package:bot_md/Profile/Reports.dart';
 import 'package:bot_md/Profile/edit_profile.dart';
+import 'package:bot_md/Profile/saved_labs.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:image_picker/image_picker.dart';
@@ -195,6 +198,7 @@ class Profile extends StatelessWidget {
                     ),
                     child: ListTile(
                       onTap: () {
+                        firstOpen = false;
                         FirebaseAuth.instance.signOut().then((value) {
                           Get.offAll(() => Login());
                         });
@@ -225,7 +229,7 @@ class Profile extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: montserratText(
                       align: TextAlign.start,
-                      text: "Diet and Remedies",
+                      text: "Saves",
                       size: 18,
                       color: Colors.grey[700],
                       weight: FontWeight.w300,
@@ -233,6 +237,42 @@ class Profile extends StatelessWidget {
                   ),
                   const SizedBox(
                     height: 25,
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Get.to(() => SavedLabs());
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.white,
+                        boxShadow: [
+                          boxShad(5, 7, 10, opacity: 0.15),
+                        ],
+                      ),
+                      child: ListTile(
+                        title: montserratText(
+                          text: 'Labs',
+                          color: Colors.black,
+                          align: TextAlign.start,
+                          size: 17,
+                        ),
+                        subtitle: montserratText(
+                          text: "Labs you've saved",
+                          size: 13,
+                          align: TextAlign.start,
+                          color: Colors.grey[500],
+                          weight: FontWeight.w400,
+                        ),
+                        trailing: const Icon(
+                          Icons.navigate_next_rounded,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 15,
                   ),
                   Container(
                     decoration: BoxDecoration(
@@ -318,8 +358,22 @@ class Profile extends StatelessWidget {
                       ],
                     ),
                     child: CheckboxListTile(
-                      value: false,
-                      onChanged: (val) {},
+                      value: currentUserData['isolated'],
+                      onChanged: (val) {
+                        DateTime now = DateTime.now();
+                        FirebaseFirestore.instance
+                            .collection("Users")
+                            .doc(currentUser.id)
+                            .update({
+                          'isolated': val,
+                          "isolatedOn": DateTime(now.year, now.month, now.day),
+                        });
+                        FirebaseFirestore.instance
+                            .collection("Admin")
+                            .doc('Admin Details')
+                            .update(
+                                {'totalIsolations': FieldValue.increment(1)});
+                      },
                       title: montserratText(
                         text: 'Isolation',
                         color: Colors.black,
@@ -347,6 +401,9 @@ class Profile extends StatelessWidget {
                       ],
                     ),
                     child: ListTile(
+                      onTap: () {
+                        Get.to(() => const IsolatoionSettings());
+                      },
                       title: montserratText(
                         text: 'Isolation Settings',
                         color: Colors.black,
@@ -355,6 +412,40 @@ class Profile extends StatelessWidget {
                       ),
                       subtitle: montserratText(
                         text: "Update your profile settings",
+                        size: 13,
+                        align: TextAlign.start,
+                        color: Colors.grey[500],
+                        weight: FontWeight.w400,
+                      ),
+                      trailing: const Icon(
+                        Icons.navigate_next_rounded,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.white,
+                      boxShadow: [
+                        boxShad(5, 7, 10, opacity: 0.15),
+                      ],
+                    ),
+                    child: ListTile(
+                      onTap: () {
+                        Get.to(() => const Reports());
+                      },
+                      title: montserratText(
+                        text: 'Covid Reports',
+                        color: Colors.black,
+                        align: TextAlign.start,
+                        size: 17,
+                      ),
+                      subtitle: montserratText(
+                        text: "Generate reports against your covid tests",
                         size: 13,
                         align: TextAlign.start,
                         color: Colors.grey[500],
@@ -390,33 +481,33 @@ class Profile extends StatelessWidget {
   }
 
   cropper(context) async {
-    await ImageCropper.cropImage(
-        sourcePath: file.path,
-        cropStyle: CropStyle.circle,
-        aspectRatioPresets: [
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio16x9
-        ],
-        androidUiSettings: const AndroidUiSettings(
-            toolbarTitle: 'Crop',
-            toolbarColor: Colors.white,
-            toolbarWidgetColor: Colors.black,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false),
-        iosUiSettings: IOSUiSettings(
-          minimumAspectRatio: 1.0,
-        )).then((value) async {
+    await ImageCropper()
+        .cropImage(
+            sourcePath: file.path,
+            cropStyle: CropStyle.circle,
+            aspectRatioPresets: [
+              CropAspectRatioPreset.ratio3x2,
+              CropAspectRatioPreset.original,
+              CropAspectRatioPreset.ratio4x3,
+              CropAspectRatioPreset.ratio16x9
+            ],
+            androidUiSettings: const AndroidUiSettings(
+                toolbarTitle: 'Crop',
+                toolbarColor: Colors.white,
+                toolbarWidgetColor: Colors.black,
+                initAspectRatio: CropAspectRatioPreset.original,
+                lockAspectRatio: false),
+            iosUiSettings: IOSUiSettings(
+              minimumAspectRatio: 1.0,
+            ))
+        .then((value) async {
       updatingImage.value = true;
-      await (await FirebaseStorage.instance
-              .ref()
-              .child('${value!.path}${DateTime.now()}')
-              .putFile(value)
-              .whenComplete(() {}))
-          .ref
-          .getDownloadURL()
-          .then((value) {
+      var ref = await FirebaseStorage.instance
+          .ref()
+          .child('${value!.path}${DateTime.now()}');
+      var upload = await ref.putFile(value);
+
+      await ref.getDownloadURL().then((value) {
         FirebaseFirestore.instance
             .collection('Users')
             .doc(currentUser.id)

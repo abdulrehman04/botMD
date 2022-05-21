@@ -1,9 +1,13 @@
 import 'dart:convert';
 
+import 'package:bot_md/Chat/chat_list.dart';
 import 'package:bot_md/Dashboard/home_.dart';
+import 'package:bot_md/Dashboard/isolationHome.dart';
 import 'package:bot_md/Dashboard/library.dart';
 import 'package:bot_md/Dashboard/profile.dart';
+import 'package:bot_md/Navigation/lab_map.dart';
 import 'package:bot_md/Navigation/laboratories.dart';
+import 'package:bot_md/globals_.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:http/http.dart' as http;
@@ -33,75 +37,105 @@ class _MainNavState extends State<MainNav> {
   List pages = [
     const Home(),
     Library(),
+    Laboratories(),
+    ChatList(),
     Profile(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Obx(() {
-        return pages[currentIndex.value];
-      }),
-      floatingActionButton: InkWell(
-        onTap: () {
-          currentIndex.value = 0;
-        },
-        child: Container(
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                primaryColor,
-                secondaryColor,
-              ],
-            ),
-          ),
-          child: const Icon(
-            Icons.home_rounded,
-            size: 40,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
-        shape: CircularNotchedRectangle(),
-        notchMargin: 5,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 35),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              IconButton(
-                icon: Icon(
-                  Icons.assignment,
-                  color: secondaryColor,
-                ),
-                onPressed: () {
-                  currentIndex.value = 1;
+    return Obx(() {
+      return currentUserData['isolated']
+          ? IsolationHome()
+          : Scaffold(
+              body: Obx(() {
+                return pages[currentIndex.value];
+              }),
+              floatingActionButton: InkWell(
+                onTap: () {
+                  currentIndex.value = 0;
                 },
-              ),
-              IconButton(
-                icon: Icon(
-                  currentIndex.value == 2
-                      ? FontAwesomeIcons.solidUser
-                      : FontAwesomeIcons.user,
-                  color: const Color(0xff1F0751),
+                child: Container(
+                  padding: const EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        primaryColor,
+                        secondaryColor,
+                      ],
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.home_rounded,
+                    size: 40,
+                    color: Colors.white,
+                  ),
                 ),
-                onPressed: () {
-                  currentIndex.value = 2;
-                },
               ),
-            ],
-          ),
-        ),
-      ),
-    );
+              floatingActionButtonLocation:
+                  FloatingActionButtonLocation.centerDocked,
+              bottomNavigationBar: BottomAppBar(
+                color: Colors.white,
+                shape: CircularNotchedRectangle(),
+                notchMargin: 5,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      IconButton(
+                        icon: Icon(
+                          Icons.assignment,
+                          color: secondaryColor,
+                        ),
+                        onPressed: () {
+                          currentIndex.value = 1;
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.map,
+                          color: secondaryColor,
+                        ),
+                        onPressed: () {
+                          currentIndex.value = 2;
+                        },
+                      ),
+                      const SizedBox(
+                        height: 5,
+                        width: 45,
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.chat,
+                          color: secondaryColor,
+                        ),
+                        onPressed: () {
+                          currentIndex.value = 3;
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          currentIndex.value == 4
+                              ? FontAwesomeIcons.solidUser
+                              : FontAwesomeIcons.user,
+                          color: const Color(0xff1F0751),
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          currentIndex.value = 4;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+    });
   }
 
   Future<void> getWorldCountries() async {

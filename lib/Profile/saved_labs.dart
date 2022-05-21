@@ -4,12 +4,16 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
 
+import '../Navigation/lab_map.dart';
 import '../constants.dart';
 import '../globals_.dart';
-import 'lab_map.dart';
 
-class Laboratories extends StatelessWidget {
-  const Laboratories({Key? key}) : super(key: key);
+class SavedLabs extends StatelessWidget {
+  SavedLabs() {
+    getSavedLabsDetails();
+  }
+
+  RxList savedLabs = RxList([]);
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +22,7 @@ class Laboratories extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              gradientAppBar(context: context, title: "Labs Nearby"),
+              gradientAppBar(context: context, title: "Saved Labs"),
               const SizedBox(
                 height: 25,
               ),
@@ -30,8 +34,7 @@ class Laboratories extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: montserratText(
                         align: TextAlign.start,
-                        text:
-                            "Labs Available in your ${currentUserData['labRadius']} km",
+                        text: "Labs you've saved",
                         size: 17,
                         color: Colors.grey[600],
                         weight: FontWeight.w400,
@@ -42,7 +45,7 @@ class Laboratories extends StatelessWidget {
                     height: 25,
                   ),
                   Obx(() {
-                    return labs.value.length == 0
+                    return savedLabs.value.length == 0
                         ? SizedBox(
                             height: 300,
                             child: Column(
@@ -68,12 +71,11 @@ class Laboratories extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   height: 15,
                                 ),
                                 montserratText(
-                                  text:
-                                      "Please wait while we collect some data for your location",
+                                  text: "No labs saved",
                                   color: Colors.grey[700],
                                   weight: FontWeight.w300,
                                   size: 14,
@@ -83,35 +85,37 @@ class Laboratories extends StatelessWidget {
                           )
                         : Column(
                             children: [
-                              ...labs.value.length <= 8
-                                  ? labs.value.map((e) {
+                              ...savedLabs.value.length <= 8
+                                  ? savedLabs.value.map((e) {
                                       return InkWell(
                                           onTap: () {
                                             Get.to(
                                               () => LabMap(
+                                                savedLabs: true,
                                                 key: Key(e.toString()),
                                                 currentLab: e,
                                                 currentLabIndex:
-                                                    labs.indexOf(e),
+                                                    savedLabs.indexOf(e),
                                                 allLabs: <DocumentSnapshot>[
-                                                  ...labs.value
+                                                  ...savedLabs.value
                                                 ],
                                               ),
                                             );
                                           },
                                           child: LabWidget(e, context));
                                     }).toList()
-                                  : labs.value.sublist(0, 8).map((e) {
+                                  : savedLabs.value.sublist(0, 8).map((e) {
                                       return InkWell(
                                           onTap: () {
                                             Get.to(
                                               () => LabMap(
+                                                savedLabs: true,
                                                 key: Key(e.toString()),
                                                 currentLab: e,
                                                 currentLabIndex:
-                                                    labs.indexOf(e),
+                                                    savedLabs.indexOf(e),
                                                 allLabs: <DocumentSnapshot>[
-                                                  ...labs.value
+                                                  ...savedLabs.value
                                                 ],
                                               ),
                                             );
@@ -126,13 +130,14 @@ class Laboratories extends StatelessWidget {
                       onTap: () {
                         Get.to(
                           () => LabMap(
+                            savedLabs: true,
                             currentLab: labs.value[0],
                             currentLabIndex: 0,
                             allLabs: <DocumentSnapshot>[...labs.value],
                           ),
                         );
                       }),
-                  SizedBox(
+                  const SizedBox(
                     height: 35,
                   )
                 ],
@@ -142,5 +147,13 @@ class Laboratories extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  getSavedLabsDetails() {
+    currentUserData.value['savedLabs'].forEach((e) {
+      FirebaseFirestore.instance.collection("Labs").doc(e).get().then((value) {
+        savedLabs.value = [...savedLabs.value, value];
+      });
+    });
   }
 }

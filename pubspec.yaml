@@ -34,27 +34,38 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  firebase_messaging: ^11.2.12
+  fl_chart: ^0.50.1
+  speech_to_text: ^5.4.3
+  pdf: ^3.8.1
   google_sign_in:
   firebase_core:
-  firebase_messaging:
-  firebase_auth:
-  firebase_storage:
+  firebase_auth: ^3.3.9
+  firebase_storage: ^10.2.9
+  shared_preferences:
   image_cropper:
-  image_picker:
-  ibm_watson_assistant: ^1.2.0
+  image_picker: ^0.8.4+10
+  ibm_watson_assistant: 
   cloud_firestore:
   get:
-  http:
-  google_fonts:
+  http: ^0.13.4
+  google_fonts: ^2.3.1
+  location:
   dio:
   font_awesome_flutter:
   curved_nav_bar: ^0.0.2
+  google_map_polyline_new: ^0.3.0+2
   permission_handler:
   geolocator: ^7.7.1
   card_swiper: ^1.0.4
   geocoding: ^2.0.1
   android_intent:
-  google_maps_flutter:
+  toggle_switch: ^1.4.0
+  intl:
+  flutter_switch: ^0.3.2
+  google_maps_flutter: ^2.1.2
+  path_provider:
+  open_file:
 
 dev_dependencies:
   flutter_test:
@@ -85,7 +96,6 @@ flutter:
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
-
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/assets-and-images/#from-packages
 

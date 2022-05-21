@@ -1,0 +1,18 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
+class PinInformation {
+  String pinPath;
+  IconData icon;
+  LatLng location;
+  String locationName;
+  Color labelColor;
+
+  PinInformation(
+      {required this.pinPath,
+      required this.icon,
+      required this.location,
+      required this.locationName,
+      required this.labelColor});
+}

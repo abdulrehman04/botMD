@@ -1,18 +1,23 @@
-import 'package:bot_md/Dashboard/home_.dart';
-import 'package:bot_md/Dashboard/profile.dart';
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:bot_md/Auth/login.dart';
+import 'package:bot_md/Navigation/laboratories.dart';
 import 'package:bot_md/constants.dart';
-import 'package:bot_md/gps_location.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:get/state_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'Dashboard/main_nav.dart';
 
 RxMap currentUserData = RxMap({});
+RxMap adminDetails = RxMap({});
 late DocumentSnapshot currentUser;
 FirebaseAuth auth = FirebaseAuth.instance;
 FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -459,27 +464,582 @@ List worldCountries = [
   {"Country": "Zimbabwe", "ThreeLetterSymbol": "zwe"}
 ];
 
-void getandUpdateUsersData() {
-  // messaging.getToken().then((token) {
-  //   print(token);
-  //   FirebaseFirestore.instance
-  //       .collection('Users')
-  //       .doc(FirebaseAuth.instance.currentUser!.uid)
-  //       .update({
-  //     'token': token,
-  //   }).then((value) {
+Future<void> getandUpdateUsersData() async {
+  FirebaseMessaging.instance.getToken().then((token) {
+    initMessages();
+    FirebaseFirestore.instance
+        .collection('Users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .update({
+      'token': token,
+    }).then((value) {
+      print("Done");
+      FirebaseFirestore.instance
+          .collection('Users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .snapshots()
+          .listen((value) {
+        print("Getting data");
+        currentUser = value;
+        currentUserData.value = Map.from(value.data()!);
+        if (firstOpen == false) {
+          getNearestLabs(currentUserData['labRadius']);
+          getMyChats();
+          getBlogs();
+          showVaccinationForm();
+          getVaccineData();
+          getAdminDetails();
+          // updateIsolationDays();
+          firstOpen = true;
+          // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Home()));
+          Get.off(() => MainNav());
+        }
+      });
+    });
+  });
+}
+
+updateIsolationDays() {
+  FirebaseFirestore.instance.collection("Users").get().then((value) {
+    value.docs.forEach((element) {
+      FirebaseFirestore.instance.collection("Users").doc(element.id).update({
+        'sos_contacts': [],
+        'isolatedOn': null,
+      });
+    });
+  });
+}
+
+getAdminDetails() {
   FirebaseFirestore.instance
-      .collection('Users')
-      .doc(FirebaseAuth.instance.currentUser!.uid)
+      .collection("Admin")
+      .doc('Admin Details')
       .snapshots()
       .listen((value) {
-    currentUser = value;
-    currentUserData.value = Map.from(value.data()!);
-    if (firstOpen == false) {
-      firstOpen = true;
-      Get.off(() => MainNav());
+    adminDetails.value = value.data()!;
+  });
+}
+
+isolationPillButton(text, onTap) {
+  return InkWell(
+    onTap: onTap,
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(35),
+        border: Border.all(
+          color: Colors.white,
+          width: 0.6,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 15,
+        vertical: 10,
+      ),
+      child: montserratText(
+        text: text,
+        color: Colors.white,
+        size: 13,
+        weight: FontWeight.w500,
+      ),
+    ),
+  );
+}
+
+getVaccineData() {
+  FirebaseFirestore.instance.collection("Vaccinations").get().then((value) {
+    value.docs.forEach((element) {
+      print(vaccData.value[element.get('vaccine')]);
+      vaccData.value[element.get('vaccine')] =
+          vaccData.value[element.get('vaccine')] + element.get('reCovidCount');
+      // if (!vaccData.value.containsKey(element.get('vaccine'))) {
+      //   vaccData.value.addAll({
+      //     element.get('vaccine'): element.get('reCovidCount'),
+      //   });
+      // } else {
+
+      // }
+    });
+
+    print("Vaccs here: ${vaccData.value}");
+  });
+}
+
+void showVaccinationForm() {
+  if (!currentUserData['hadFirstVacc']) {
+    Timer(const Duration(seconds: 0), () {
+      Get.defaultDialog(
+        confirm: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: InkWell(
+            onTap: () {
+              if (1 != 1) {
+              } else {
+                if (vaccinated.value) {
+                  FirebaseFirestore.instance
+                      .collection("Vaccinations")
+                      .doc(currentUser.id)
+                      .set({
+                    'date': DateTime.now(),
+                    'dateVaccinated': dateVaccinated.value,
+                    'notes': covidNotes.text.trim(),
+                    'reCovidCount': reCovid.value ? 1 : 0,
+                    'vaccine': selectedVaccine.value,
+                    'user': currentUser.id,
+                    'triMonthlyData': [],
+                  }).then((value) {
+                    FirebaseFirestore.instance
+                        .collection("Users")
+                        .doc(currentUser.id)
+                        .update({
+                      'hadFirstVacc': true,
+                    });
+                  });
+                  Get.back();
+                } else {
+                  FirebaseFirestore.instance
+                      .collection("Users")
+                      .doc(currentUser.id)
+                      .update({
+                    'hadFirstVacc': true,
+                  });
+                  Get.back();
+                }
+              }
+            },
+            child: montserratText(
+              text: "Confirm",
+              color: primaryColor,
+              size: 13,
+              weight: FontWeight.w400,
+            ),
+          ),
+        ),
+        cancel: InkWell(
+          onTap: () {
+            Get.back();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: montserratText(
+              text: "Cancel",
+              color: Colors.grey,
+              size: 13,
+              weight: FontWeight.w400,
+            ),
+          ),
+        ),
+        title: "Hol'up!",
+        contentPadding: const EdgeInsets.all(15),
+        middleText: "We'd like your vaccination data",
+        content: Obx(() {
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                montserratText(
+                  text:
+                      "We need your help, we're collecting data for vaccinations",
+                  size: 12,
+                  color: Colors.grey,
+                  weight: FontWeight.w300,
+                  align: TextAlign.start,
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                SwitchListTile(
+                  value: vaccinated.value,
+                  contentPadding: const EdgeInsets.all(0),
+                  onChanged: (val) {
+                    vaccinated.value = val;
+                  },
+                  activeColor: primaryColor,
+                  title: montserratText(
+                    text: "Have you been vaccinated yet?",
+                    size: 13,
+                    color: Colors.black,
+                    weight: FontWeight.w400,
+                  ),
+                ),
+                vaccinated.value
+                    ? Column(
+                        children: [
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              color: Colors.white,
+                              boxShadow: [
+                                boxShad(0, 0, 30),
+                              ],
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton(
+                                isExpanded: true,
+                                value: selectedVaccine.value,
+                                hint: montserratText(
+                                  text: "Select Vaccine",
+                                  color: Colors.grey,
+                                  size: 13,
+                                  weight: FontWeight.w400,
+                                ),
+                                items:
+                                    vaccines.map<DropdownMenuItem<String>>((e) {
+                                  return DropdownMenuItem(
+                                    child: montserratText(
+                                      text: e,
+                                      size: 13,
+                                      color: Colors.black,
+                                      weight: FontWeight.w400,
+                                    ),
+                                    value: e,
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  selectedVaccine.value = val;
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          InkWell(
+                            onTap: () {
+                              showDatePicker(
+                                      context: Get.context!,
+                                      initialDate: DateTime.now(),
+                                      firstDate: DateTime(2018),
+                                      lastDate: DateTime.now())
+                                  .then((value) {
+                                dateVaccinated.value = value;
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                color: Colors.white,
+                                boxShadow: [
+                                  boxShad(0, 0, 30),
+                                ],
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              child: TextField(
+                                enabled: false,
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 13,
+                                ),
+                                controller: dateVaccinated.value == null
+                                    ? null
+                                    : TextEditingController(
+                                        text: DateFormat('dd-MMM-yyyy')
+                                            .format(dateVaccinated.value),
+                                      ),
+                                decoration: InputDecoration(
+                                  hintText: "Date of Vaccination",
+                                  hintStyle: GoogleFonts.montserrat(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          SwitchListTile(
+                            value: reCovid.value,
+                            contentPadding: const EdgeInsets.all(0),
+                            onChanged: (val) {
+                              reCovid.value = val;
+                            },
+                            activeColor: primaryColor,
+                            title: montserratText(
+                              text: "Did you get Covid after being vaccinated?",
+                              size: 13,
+                              align: TextAlign.start,
+                              color: Colors.black,
+                              weight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          reCovid.value
+                              ? Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 0),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 25, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(21),
+                                    color: Colors.white,
+                                    boxShadow: [
+                                      boxShad(0, 0, 50),
+                                    ],
+                                  ),
+                                  child: TextField(
+                                    enabled: true,
+                                    autofocus: true,
+                                    controller: covidNotes,
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "Any notes on your experience",
+                                      hintStyle: GoogleFonts.montserrat(
+                                        color: Colors.grey.withOpacity(0.7),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(),
+                        ],
+                      )
+                    : Container(),
+              ],
+            ),
+          );
+        }),
+      );
+    });
+  } else {
+    getVaccData();
+  }
+}
+
+getVaccData() {}
+
+void initMessages() {
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('Got a message whilst in the foreground!');
+    print('Message data: ${message.data}');
+    if (message.notification != null) {
+      Get.snackbar(message.notification!.title!, message.notification!.body!);
+      print(
+          'Message also contained a notification: ${message.notification!.body}');
     }
   });
+}
+
+sendNotif(title, body, token) {
+  http.post(Uri.parse('https://fcm.googleapis.com/fcm/send'),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "key=$cloudNotifkey"
+      },
+      body: jsonEncode({
+        "to": token,
+        "notification": {
+          "title": title,
+          "body": body,
+          "mutable_content": true,
+          "sound": "Tri-tone"
+        },
+        "data": {
+          "url": "<url of media image>",
+          "dl": "<deeplink action on tap of notification>"
+        }
+      }));
+}
+
+getBlogs() {
+  FirebaseFirestore.instance.collection("Diets").get().then((value) {
+    diets.value = value.docs;
+  });
+}
+
+getMyChats() {
+  print("Getting chats");
+  FirebaseFirestore.instance
+      .collection("Chats")
+      .where('users', arrayContainsAny: [currentUser.id])
+      .snapshots()
+      .listen((value) {
+        print("OOF");
+        print(value.docs);
+        chats.value = value.docs;
+      });
+}
+
+getNearestLabs(distance) {
+  FirebaseFirestore.instance.collection("Labs").snapshots().listen((value) {
+    print("got change");
+    labs.value = [];
+    value.docs.forEach((element) {
+      var dist = Geolocator.distanceBetween(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        element.get('geometry')['location']['lat'],
+        element.get('geometry')['location']['lng'],
+      );
+      print(dist / 1000);
+      if ((dist / 1000) <= distance) {
+        labs.value.add(element);
+      }
+    });
+    print("Labs are: ${labs.value}");
+    if (labs.value.length <= 2 && labSearchedOnce == false) {
+      labSearchedOnce = true;
+      print("Labs problem: ${labs.value.length}");
+      scrapeFromApi(currentLocation.latitude, currentLocation.longitude);
+    }
+  });
+}
+
+void scrapeFromApi(double latitude, double longitude) {
+  print("Called");
+  http
+      .get(Uri.parse("http://67.202.27.245:8080/scrape/$latitude/$longitude"))
+      .then((value) {});
+}
+
+headingWidget(text, {color = Colors.white, showViewAll = true}) {
+  return Padding(
+    padding: const EdgeInsets.only(right: 10),
+    child: showViewAll
+        ? Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              montserratText(
+                align: TextAlign.start,
+                text: text,
+                size: 18,
+                color: color,
+                weight: FontWeight.w300,
+              ),
+              montserratText(
+                align: TextAlign.start,
+                text: "View All",
+                size: 13,
+                color: primaryColor.withOpacity(0.8),
+                weight: FontWeight.w300,
+              )
+            ],
+          )
+        : montserratText(
+            align: TextAlign.start,
+            text: text,
+            size: 18,
+            color: color,
+            weight: FontWeight.w300,
+          ),
+  );
+}
+
+Widget LabWidget(e, context) {
+  return Container(
+    height: MediaQuery.of(context).size.height * 0.25,
+    width: MediaQuery.of(context).size.width * 0.86,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(18),
+      color: Colors.white,
+      boxShadow: [
+        boxShad(5, 7, 10, opacity: 0.15),
+      ],
+    ),
+    margin: const EdgeInsets.only(
+      right: 15,
+      left: 15,
+      bottom: 18,
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(18),
+                bottomLeft: Radius.circular(18),
+              ),
+              image: e.get('photo') != null
+                  ? DecorationImage(
+                      image: MemoryImage(
+                        e.get('photo').bytes,
+                      ),
+                      fit: BoxFit.cover,
+                    )
+                  : const DecorationImage(
+                      image: AssetImage(
+                        'Assets/userAvatar.png',
+                      ),
+                    ),
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 4,
+          child: Container(
+            padding: const EdgeInsets.only(left: 15, top: 15, right: 10),
+            child: Column(
+              children: [
+                montserratText(
+                  text: e.get('name'),
+                  size: 15,
+                  weight: FontWeight.w500,
+                  color: Colors.black,
+                  align: TextAlign.start,
+                ),
+                const SizedBox(
+                  height: 5,
+                ),
+                montserratText(
+                  text: e.get('formatted_address'),
+                  size: 12,
+                  weight: FontWeight.w400,
+                  color: Colors.grey,
+                  align: TextAlign.start,
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 18),
+                  child: Row(
+                    // mainAxisAlignment:
+                    //     MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.star,
+                            size: 14,
+                            color: primaryColor,
+                          ),
+                          montserratText(
+                            text: e.get('rating') == null
+                                ? "0.0"
+                                : e.get('rating').toString(),
+                            color: primaryColor,
+                            size: 12,
+                            weight: FontWeight.w400,
+                          )
+                        ],
+                      ),
+                      montserratText(
+                        text: e.get('user_ratings_total') == null
+                            ? "(0)"
+                            : " (${e.get('user_ratings_total').toString()})",
+                        color: primaryColor,
+                        size: 12,
+                        weight: FontWeight.w400,
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 boxShad(double x, double y, double b, {opacity = 0.4}) {
@@ -490,6 +1050,40 @@ boxShad(double x, double y, double b, {opacity = 0.4}) {
   );
 }
 
+Future<Position> getCurrentLocation() async {
+  bool serviceEnabled;
+  LocationPermission permission;
+
+  // Test if location services are enabled.
+  // serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  // if (!serviceEnabled) {
+  //   // Location services are not enabled don't continue
+  //   // accessing the position and request users of the
+  //   // App to enable the location services.
+  //   await Geolocator.openLocationSettings();
+  //   return Future.error('Location services are disabled.');
+  // }
+
+  permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      return Future.error('Location permissions are denied');
+    }
+  }
+
+  if (permission == LocationPermission.deniedForever) {
+    // Permissions are denied forever, handle appropriately.
+    return Future.error(
+        'Location permissions are permanently denied, we cannot request permissions.');
+  }
+
+  // When we reach here, permissions are granted and we can
+  // continue accessing the position of the device.
+  return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high);
+}
+
 getPage(page) {
   switch (page) {
     case 'home':
@@ -497,6 +1091,18 @@ getPage(page) {
         'type': 'index',
         'value': 1,
       };
+    case 'labs':
+      if (currentUserData['isolated']) {
+        return {
+          'type': 'page',
+          'value': const Laboratories(),
+        };
+      } else {
+        return {
+          'type': 'index',
+          'value': 2,
+        };
+      }
     case 'profile':
       return {
         'type': 'index',
@@ -507,7 +1113,28 @@ getPage(page) {
         'type': 'index',
         'value': 2,
       };
+    case 'signup':
+      return {
+        'type': 'page',
+        'value': const Login(),
+      };
   }
+}
+
+errorSnack(msg) {
+  return Get.snackbar(
+    "Error",
+    msg,
+    backgroundColor: Colors.redAccent.withOpacity(0.5),
+  );
+}
+
+successSnack(msg, {title = "Success"}) {
+  return Get.snackbar(
+    title,
+    msg,
+    backgroundColor: Colors.lightGreen.withOpacity(0.5),
+  );
 }
 
 Widget montserratText(
@@ -584,11 +1211,16 @@ longButton({text, onTap, icon}) {
   );
 }
 
-loginInputField(
-    {hint, @required controller, hideText, double horizontal = 30}) {
+loginInputField({
+  hint,
+  @required controller,
+  double horizontal = 30,
+  obscure = false,
+  enabled = true,
+}) {
   return Container(
     margin: EdgeInsets.symmetric(horizontal: horizontal),
-    padding: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(21),
       color: Colors.white,
@@ -597,8 +1229,10 @@ loginInputField(
       ],
     ),
     child: TextField(
+      enabled: enabled,
       autofocus: true,
       controller: controller,
+      obscureText: obscure,
       decoration: InputDecoration(
         border: InputBorder.none,
         hintText: hint,
@@ -640,7 +1274,7 @@ Widget shadedListTile({title, subtitle, onTap}) {
           ),
         ),
       ),
-      SizedBox(
+      const SizedBox(
         height: 15,
       ),
     ],

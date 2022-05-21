@@ -6,8 +6,8 @@ import 'package:get/get.dart';
 import '../constants.dart';
 import '../globals_.dart';
 
-class UpdateEmail extends StatelessWidget {
-  UpdateEmail({Key? key}) : super(key: key);
+class ForgotPass extends StatelessWidget {
+  ForgotPass({Key? key}) : super(key: key);
 
   TextEditingController email = TextEditingController();
   RxBool isSubmitting = RxBool(false);
@@ -16,7 +16,7 @@ class UpdateEmail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       bottomSheet: Obx(() {
-        return Container(
+        return SizedBox(
           height: 70,
           child: isSubmitting.value == true
               ? Center(
@@ -26,7 +26,7 @@ class UpdateEmail extends StatelessWidget {
                 )
               : gradientLongButton(
                   horizontal: 20,
-                  text: "UPDATE",
+                  text: "RESET PASSWORD",
                   onTap: () async {
                     if (email.text == "") {
                       Get.snackbar(
@@ -39,18 +39,30 @@ class UpdateEmail extends StatelessWidget {
                       if (GetUtils.isEmail(email.text.trim())) {
                         isSubmitting.value = true;
                         try {
-                          await FirebaseAuth.instance.currentUser!
-                              .updateEmail('abdul.rehman@rwazi.com')
-                              .then((_) {
-                            isSubmitting.value = true;
-                            Get.back();
-                            Get.snackbar(
-                              "All Set!",
-                              "Your Email Address has been updated",
-                              colorText: Colors.white,
-                              backgroundColor:
-                                  Colors.greenAccent.withOpacity(0.5),
-                            );
+                          FirebaseFirestore.instance
+                              .collection("Users")
+                              .where('email', isEqualTo: email.text.trim())
+                              .get()
+                              .then((value) {
+                            if (value.docs.length == 0) {
+                              Get.snackbar(
+                                "Error",
+                                "User doesn't exist",
+                                backgroundColor:
+                                    Colors.redAccent.withOpacity(0.4),
+                              );
+                            } else {
+                              FirebaseAuth.instance
+                                  .sendPasswordResetEmail(
+                                      email: email.text.trim())
+                                  .then((value) {
+                                Get.back();
+                                Get.snackbar(
+                                  "All Set",
+                                  "A password reset link has been sent to your email",
+                                );
+                              });
+                            }
                           });
                         } on FirebaseException catch (e) {
                           isSubmitting.value = false;
@@ -77,14 +89,14 @@ class UpdateEmail extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            gradientAppBar(context: context, title: "Update Email"),
+            gradientAppBar(context: context, title: "Reset Password"),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
                   loginInputField(
                     controller: email,
-                    hint: "Enter new Email Address",
+                    hint: "Enter your Email Address",
                     horizontal: 0,
                   ),
                 ],

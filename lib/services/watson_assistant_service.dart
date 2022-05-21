@@ -32,7 +32,6 @@ class WatsonAssistantService {
   }
 
   Future sendInput(String input, {bool returnContext = true}) async {
-    print(sessionId);
     final data = {
       'input': {
         'text': input,
@@ -46,29 +45,33 @@ class WatsonAssistantService {
       "$baseUrl$assistantId/sessions/$sessionId/message?version=2021-06-14",
       data: data,
     );
-    print(res.data);
     if (res.data['output']['generic'][0]['response_type'] == 'text') {
-      return {
-        'type': 'text',
-        'response_text': res.data['output']['generic'][0]['text'],
-        'data': res.data
-      };
+      List data = [];
+      res.data['output']['generic'].forEach((e) {
+        data.add(
+            {'type': 'text', 'response_text': e['text'], 'data': res.data});
+      });
+      return data;
     } else if (res.data['output']['generic'][0]['response_type'] ==
         'user_defined') {
-      return {
-        'type': 'user_defined',
-        'response_text': res.data['output']['generic'][0]['user_defined']
-            ['title'],
-        'data': res.data,
-        'value': res.data['output']['generic'][0]['user_defined']['value']
-      };
+      return [
+        {
+          'type': 'user_defined',
+          'response_text': res.data['output']['generic'][0]['user_defined']
+              ['title'],
+          'data': res.data,
+          'value': res.data['output']['generic'][0]['user_defined']['value']
+        }
+      ];
     } else {
-      return {
-        'type': 'option',
-        'title': res.data['output']['generic'][0]['title'],
-        'options': res.data['output']['generic'][0]['options'],
-        'data': res.data
-      };
+      return [
+        {
+          'type': 'option',
+          'title': res.data['output']['generic'][0]['title'],
+          'options': res.data['output']['generic'][0]['options'],
+          'data': res.data
+        }
+      ];
     }
   }
 }

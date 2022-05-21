@@ -1,5 +1,6 @@
 import 'package:bot_md/Auth/login.dart';
 import 'package:bot_md/gps_location.dart';
+import 'package:bot_md/onBoarding/on_boarding_chat.dart';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,7 +18,7 @@ class OnBoarding1 extends StatefulWidget {
 class _OnBoarding1State extends State<OnBoarding1> {
   @override
   initState() {
-    requestLocationPermission();
+    // requestLocationPermission();
   }
 
   var currentIndex = 0.obs;
@@ -219,7 +220,7 @@ class _OnBoarding1State extends State<OnBoarding1> {
               gradientLongButton(
                 text: "GET STARTED",
                 onTap: () {
-                  Get.to(() => const Login());
+                  Get.to(() => const OnBoardingChat());
                 },
               ),
             ],

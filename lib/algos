@@ -1,0 +1,48 @@
+// getLabs(){
+//     var resultLabs = []
+
+//     var labs = getLabsFromFirestore();
+//     var radius = currentUser.labSearchRadius;
+//     labs.forEach(lab){
+//         if(getDistance(lab.position, currentUser.position) <= radius){
+//             resultLabs.add(lab);
+//         }
+//     }
+
+//     if(resultLabs.length<=2){
+//         scrapeLabsForLocation(currentUser.position);
+//     }
+// }
+
+
+// getPreviousChats(){
+//     var chats<Chat> = [];
+//     var myChats = db.where('users', contains, currentUser.id).get();
+//     myChats.forEach(chat){
+//         var otherUser = chat.users[0] == currentUser.id ? chat.users[1] : chat.users[0];
+//         chats.add(Chat(chat, otherUser));
+//     }
+// }
+
+
+// sendMessage(msg){
+//     bool chatExists = checkPrevChat();
+//     if(chatExists){
+//         db.collection("Chats").doc(prevChat.id).collection("messages").add({
+//             "from": currentUser.id,
+//             'message': msg,
+//             'time': DateTime.now(),
+//         })
+//     }
+//     else{
+//         db.collection("Chats").add({
+//             'users': [currentUser.id, otherPerson.id]
+//         }).then((val){
+//             db.collection("Chats").doc(val.id).collection("messages").add({
+//                 "from": currentUser.id,
+//                 'message': msg,
+//                 'time': DateTime.now(),
+//             })
+//         });
+//     }
+// }

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:bot_md/Chat/chat.dart';
+import 'package:bot_md/Chat/botchat.dart';
 import 'package:bot_md/globals_.dart';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
@@ -118,27 +118,27 @@ class _HomeState extends State<Home> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         key: scaffoldKey,
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              const DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                ),
-                child: Text('Drawer Header'),
-              ),
-              ListTile(
-                title: const Text('Item 1'),
-                onTap: () {},
-              ),
-              ListTile(
-                title: const Text('Item 2'),
-                onTap: () {},
-              ),
-            ],
-          ),
-        ),
+        // drawer: Drawer(
+        //   child: ListView(
+        //     padding: EdgeInsets.zero,
+        //     children: [
+        //       const DrawerHeader(
+        //         decoration: BoxDecoration(
+        //           color: Colors.blue,
+        //         ),
+        //         child: Text('Drawer Header'),
+        //       ),
+        //       ListTile(
+        //         title: const Text('Item 1'),
+        //         onTap: () {},
+        //       ),
+        //       ListTile(
+        //         title: const Text('Item 2'),
+        //         onTap: () {},
+        //       ),
+        //     ],
+        //   ),
+        // ),
         body: Stack(
           children: [
             GoogleMap(
@@ -188,15 +188,25 @@ class _HomeState extends State<Home> {
                               // currentIndex.value = index;
                             },
                             itemBuilder: (context, index) {
-                              return mainItems[index];
+                              return InkWell(
+                                onTap: () {
+                                  Get.to(() => BotChat());
+                                },
+                                child: mainItems[index],
+                              );
                             },
                           ),
                         ),
-                        montserratText(
-                            text: "Let's explore more options",
-                            color: secondaryColor,
-                            size: 11,
-                            weight: FontWeight.w300),
+                        InkWell(
+                          onTap: () {
+                            showVaccinationForm();
+                          },
+                          child: montserratText(
+                              text: "Let's explore more options",
+                              color: secondaryColor,
+                              size: 11,
+                              weight: FontWeight.w300),
+                        ),
                         Column(
                           children: [
                             Container(
@@ -206,6 +216,9 @@ class _HomeState extends State<Home> {
                                   color: Colors.white,
                                   boxShadow: [boxShad(5, 5, 5)]),
                               child: ListTile(
+                                onTap: () {
+                                  currentIndex.value = 1;
+                                },
                                 leading:
                                     Image.asset('Assets/diet-schedule.png'),
                                 trailing: Container(
@@ -244,6 +257,9 @@ class _HomeState extends State<Home> {
                                   color: Colors.white,
                                   boxShadow: [boxShad(5, 5, 5)]),
                               child: ListTile(
+                                onTap: () {
+                                  currentIndex.value = 2;
+                                },
                                 leading:
                                     Image.asset('Assets/navigation_img.png'),
                                 trailing: Container(
@@ -470,7 +486,7 @@ class _HomeState extends State<Home> {
                             ),
                             InkWell(
                               onTap: () {
-                                Get.to(() => const Chat());
+                                Get.to(() => const BotChat());
                               },
                               child: Container(
                                 width: 130,
@@ -518,7 +534,7 @@ class _HomeState extends State<Home> {
                                 ),
                               ),
                               builder: (context) {
-                                return Container(
+                                return SizedBox(
                                   height: 250,
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
@@ -713,7 +729,7 @@ class _HomeState extends State<Home> {
                         ),
                       );
                     } else {
-                      scaffoldKey.currentState?.openDrawer();
+                      // scaffoldKey.currentState?.openDrawer();
                     }
                   },
                   child: covidStats.value
@@ -733,11 +749,18 @@ class _HomeState extends State<Home> {
                     ? Container()
                     : InkWell(
                         onTap: () {},
-                        child: CircleAvatar(
-                          radius: 25,
-                          backgroundImage:
-                              NetworkImage(currentUserData['image']),
-                        ),
+                        child: (currentUserData['image'] == null)
+                            ? const CircleAvatar(
+                                radius: 25,
+                                backgroundColor: Colors.white,
+                                backgroundImage: NetworkImage(
+                                    'https://www.prajwaldesai.com/wp-content/uploads/2021/02/Find-Users-Last-Logon-Time-using-4-Easy-Methods.jpg'),
+                              )
+                            : CircleAvatar(
+                                radius: 25,
+                                backgroundImage:
+                                    NetworkImage(currentUserData['image']),
+                              ),
                       ),
               );
             }),
